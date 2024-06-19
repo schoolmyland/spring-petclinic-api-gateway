@@ -1,0 +1,11 @@
+/home/pet-clinic/split-service/spring-petclinic-api-gateway/src/main/java/org/springframework/samples/petclinic/api/dto/OwnerDetails.java
+/home/pet-clinic/split-service/spring-petclinic-api-gateway/src/main/java/org/springframework/samples/petclinic/api/application/CustomersServiceClient.java
+/home/pet-clinic/split-service/spring-petclinic-api-gateway/src/main/java/org/springframework/samples/petclinic/api/dto/PetType.java
+/home/pet-clinic/split-service/spring-petclinic-api-gateway/src/main/java/org/springframework/samples/petclinic/api/ApiGatewayApplication.java
+/home/pet-clinic/split-service/spring-petclinic-api-gateway/src/main/java/org/springframework/samples/petclinic/api/dto/PetDetails.java
+/home/pet-clinic/split-service/spring-petclinic-api-gateway/src/main/java/org/springframework/samples/petclinic/api/dto/VisitDetails.java
+/home/pet-clinic/split-service/spring-petclinic-api-gateway/src/main/java/org/springframework/samples/petclinic/api/boundary/web/ApiGatewayController.java
+/home/pet-clinic/split-service/spring-petclinic-api-gateway/src/main/java/org/springframework/samples/petclinic/api/ApiGatewayDiscoveryConfig.java
+/home/pet-clinic/split-service/spring-petclinic-api-gateway/src/main/java/org/springframework/samples/petclinic/api/boundary/web/InsecurityConfiguration.java
+/home/pet-clinic/split-service/spring-petclinic-api-gateway/src/main/java/org/springframework/samples/petclinic/api/application/VisitsServiceClient.java
+/home/pet-clinic/split-service/spring-petclinic-api-gateway/src/main/java/org/springframework/samples/petclinic/api/dto/Visits.java
