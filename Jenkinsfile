@@ -30,8 +30,8 @@ pipeline {
                     sleep 10
                     docker login -u $DOCKER_ID -p $DOCKER_PASS
                     docker tag $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG-dev $DOCKER_ID/$DOCKER_IMAGE:latest-dev
-                    docker push $DOCKER_ID/$DOCKER_IMAG:$DOCKER_TAG-dev
-                    docker push $DOCKER_ID/$DOCKER_IMAG:latest-dev
+                    docker push $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG-dev
+                    docker push $DOCKER_ID/$DOCKER_IMAGE:latest-dev
                     '''
                 }
             }
@@ -103,8 +103,8 @@ pipeline {
                         sleep 10
                         docker login -u $DOCKER_ID -p $DOCKER_PASS
                         docker tag $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG-qa-${client} $DOCKER_ID/$DOCKER_IMAGE:latest-qa-${client}
-                        docker push $DOCKER_ID/$DOCKER_IMAG:$DOCKER_TAG-qa-${client}
-                        docker push $DOCKER_ID/$DOCKER_IMAG:latest-qa-${client}
+                        docker push $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG-qa-${client}
+                        docker push $DOCKER_ID/$DOCKER_IMAGE:latest-qa-${client}
                         sleep 10
                         '''
                     }
