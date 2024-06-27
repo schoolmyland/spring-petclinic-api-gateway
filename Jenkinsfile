@@ -43,7 +43,7 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    cd /opt/helm/
+                    cp -r /opt/helm/* ./
                     rm -Rf .kube
                     mkdir .kube
                     ls
@@ -126,11 +126,17 @@ pipeline {
             }
         }
         stage('Deploiement QA par client') {
+            environment {
+                KUBECONFIG = credentials("config") // we retrieve  kubeconfig f>
+            }
             steps {
                 script {
                     for (client in CLIENT_LIST.split(",")) {
                         sh '''
-                        cd /opt/helm/
+                        rm -Rf .kube
+                        mkdir .kube
+                        ls
+                        cat $KUBECONFIG > .kube/config
                         helm upgrade --install app spring-pet-clinic-litecloud-dns --values=./spring-pet-clinic-litecloud-dns/${client}-value.yaml
                         sleep 60 
                         '''
