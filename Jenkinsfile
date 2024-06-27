@@ -49,7 +49,7 @@ pipeline {
                     ls
                     cat $KUBECONFIG > .kube/config
                     helm upgrade --install app spring-pet-clinic-litecloud --values=./spring-pet-clinic-litecloud/value.yaml
-                    sleep 60 
+                    sleep 120 
                     '''
                 }
             }
@@ -58,7 +58,7 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    curl localhost:8085
+                    curl localhost:30105
                     '''
                 }
             }
