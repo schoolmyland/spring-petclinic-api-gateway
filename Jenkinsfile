@@ -9,7 +9,7 @@ pipeline {
     agent any
 
     stages {
-        stage('Maven build') {
+        stage('Maven build test') {
             steps {
                 script {
                     sh '''
