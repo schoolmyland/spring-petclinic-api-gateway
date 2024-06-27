@@ -37,10 +37,17 @@ pipeline {
             }
         }
         stage('Deploiement Developpement') {
+            environment {
+                KUBECONFIG = credentials("config") // we retrieve  kubeconfig from secret file called config saved on jenkins
+            }
             steps {
                 script {
                     sh '''
                     cd /opt/helm/
+                    rm -Rf .kube
+                    mkdir .kube
+                    ls
+                    cat $KUBECONFIG > .kube/config
                     helm upgrade --install app spring-pet-clinic-litecloud --values=./spring-pet-clinic-litecloud/value.yaml
                     sleep 60 
                     '''
@@ -57,9 +64,16 @@ pipeline {
             }
         }
         stage('Demontage Env Dev') {
+            environment {
+                KUBECONFIG = credentials("config") // we retrieve  kubeconfig f>
+            }
             steps {
                 script {
                     sh '''
+                    rm -Rf .kube
+                    mkdir .kube
+                    ls
+                    cat $KUBECONFIG > .kube/config
                     helm uninstall app -n developpement
                     '''
                 }
