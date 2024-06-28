@@ -107,7 +107,6 @@ pipeline {
                 script {
                     for (client in CLIENT_LIST.split(",")) {
                         sh '''
-                        cd $WORKSPACE
                         cp /opt/custom/${client}/img/* ./src/main/resources/static/images/
                         cp /opt/custom/${client}/*.less ./src/main/less/
                         ./mvn clean package
