@@ -108,7 +108,7 @@ pipeline {
                     def clients = CLIENT_LIST.split(",")
                     for (client in clients) {
                         echo "Processing client: ${client}"
-                        sh '''
+                        sh """
                         cp /opt/custom/${client}/img/* ./src/main/resources/static/images/
                         cp /opt/custom/${client}/*.less ./src/main/less/
                         ./mvn clean package
@@ -120,7 +120,7 @@ pipeline {
                         docker push $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG-qa-${client}
                         docker push $DOCKER_ID/$DOCKER_IMAGE:latest-qa-${client}
                         sleep 10
-                        '''
+                        """
                     }
                 }
             }
