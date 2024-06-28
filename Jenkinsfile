@@ -85,16 +85,16 @@ pipeline {
                     sh '''
                     cp ./src/main/less/header.less /opt/custom/rouge/
                     cp ./src/main/less/petclinic.less /opt/custom/rouge/
-                    sed -n -p /opt/custom/rouge/header.less s/#6db33f/#fe2e2e/
-                    sed -n -p /opt/custom/rouge/petclinic.less s/#6db33f/#fe2e2e/
+                    sed -i s/#6db33f/#fe2e2e/ /opt/custom/rouge/header.less
+                    sed -i s/#6db33f/#fe2e2e/ /opt/custom/rouge/petclinic.less
                     cp ./src/main/less/header.less /opt/custom/bleu/
                     cp ./src/main/less/petclinic.less /opt/custom/bleu/
-                    sed -n -p /opt/custom/bleu/header.less s/#6db33f/#2e2efe/
-                    sed -n -p /opt/custom/bleu/petclinic.less s/#6db33f/#2e2efe/
+                    sed -i s/#6db33f/#2e2efe/ /opt/custom/bleu/header.less
+                    sed -i s/#6db33f/#2e2efe/ /opt/custom/bleu/petclinic.less
                     cp ./src/main/less/header.less /opt/custom/violet/
                     cp ./src/main/less/petclinic.less /opt/custom/violet/
-                    sed -n -p /opt/custom/violet/header.less s/#6db33f/#ac58fa/
-                    sed -n -p /opt/custom/violet/petclinic.less s/#6db33f/#ac58fa/
+                    sed -i s/#6db33f/#ac58fa/ /opt/custom/violet/header.less
+                    sed -i s/#6db33f/#ac58fa/ /opt/custom/violet/petclinic.less
                     '''
                 }
             }
