@@ -74,7 +74,7 @@ pipeline {
                     mkdir .kube
                     ls
                     cat $KUBECONFIG > .kube/config
-                    helm uninstall app -n developpement
+                    helm uninstall app 
                     '''
                 }
             }
@@ -83,7 +83,6 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    cd $WORKSPACE
                     cp ./src/main/less/header.less /opt/custom/rouge/
                     cp ./src/main/less/petclinic.less /opt/custom/rouge/
                     sed -n -p /opt/custom/rouge/header.less s/#6db33f/#fe2e2e/
