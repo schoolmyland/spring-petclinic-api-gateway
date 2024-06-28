@@ -130,7 +130,8 @@ pipeline {
             }
             steps {
                 script {
-                    for (client in CLIENT_LIST.split(",")) {
+                    def clients = CLIENT_LIST.split(",")
+                    for (client in clients) {
                         sh '''
                         rm -Rf .kube
                         mkdir .kube
