@@ -111,7 +111,7 @@ pipeline {
                         sh """
                         cp /opt/custom/${client}/img/* ./src/main/resources/static/images/
                         cp /opt/custom/${client}/*.less ./src/main/less/
-                        ./mvn clean package
+                        ./mvnw clean package
                         sleep 15
                         docker build -t $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG-qa-${client} .
                         sleep 10
@@ -133,14 +133,14 @@ pipeline {
                 script {
                     def clients = CLIENT_LIST.split(",")
                     for (client in clients) {
-                        sh '''
+                        sh  """
                         rm -Rf .kube
                         mkdir .kube
                         ls
                         cat $KUBECONFIG > .kube/config
                         helm upgrade --install app spring-pet-clinic-litecloud-dns --values=./spring-pet-clinic-litecloud-dns/${client}-value.yaml
                         sleep 60 
-                        '''
+                        """
                     }
                 }
             }
