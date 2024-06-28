@@ -107,6 +107,7 @@ pipeline {
                 script {
                     def clients = CLIENT_LIST.split(",")
                     for (client in clients) {
+                        echo "Processing client: ${client}"
                         sh '''
                         cp /opt/custom/${client}/img/* ./src/main/resources/static/images/
                         cp /opt/custom/${client}/*.less ./src/main/less/
