@@ -131,7 +131,7 @@ pipeline {
                     			string(name: 'CLIENT_NAME', value: clientName),
                     			string(name: 'HEX_CODE', value: hexCode),
                     			string(name: 'NODE_PORT', value: nodePort),
-                    			string(name: 'DOCKER_TAG', value: DOCKER_TAG)
+                    			string(name: 'DOCKER_TAG', value: DOCKER_TAG),
 					string(name: 'DISPLAY_NAME', value: displayName),
                     			string(name: 'DESCRIPTION', value: description)
                 		], wait: false
