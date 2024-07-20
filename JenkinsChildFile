@@ -11,10 +11,6 @@ pipeline {
         DOCKER_ID = "poissonchat13"
         DOCKER_IMAGE = "spring-petclinic-api-gateway"
         JENK_TOOLBOX = "/opt/jenkins"
-	DOCKER_TAG = ${params.DOCKER_TAG}
-	CLIENT_NAME = ${params.CLIENT_NAME}
-	HEX_CODE = ${params.HEX_CODE}
-	NODE_PORT = ${params.NODE_PORT}
     }
     stages {
         stage('Check double job for the same client') {
