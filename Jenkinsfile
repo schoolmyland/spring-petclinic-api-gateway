@@ -2,9 +2,9 @@ pipeline {
     environment {
         DOCKER_ID = "poissonchat13"
         DOCKER_IMAGE = "spring-petclinic-api-gateway"
-		JMETER_TAG = "gatw"
+	JMETER_TAG = "gatw"
         JENK_TOOLBOX = "/opt/jenkins"
-		CSV_FILE = "${JENK_TOOLBOX}/custom/client-list.csv"
+	CSV_FILE = "${JENK_TOOLBOX}/custom/client-list.csv"
     }
     agent any
 
@@ -32,7 +32,7 @@ pipeline {
             }
             steps {
                 sh '''
-				$JENK_TOOLBOX/ctrl/checkNamespaceUse.sh
+		$JENK_TOOLBOX/ctrl/checkNamespaceUse.sh
                 cp -r ${JENK_TOOLBOX}/helm/* ./
                 rm -Rf .kube
                 mkdir .kube
@@ -46,9 +46,9 @@ pipeline {
         stage('Test Acceptance') {
             steps {  
                 sh '''
-				$JENK_TOOLBOX/ctrl/checkpod.sh
-				curl localhost:30105
-				'''
+		$JENK_TOOLBOX/ctrl/checkpod.sh
+		curl localhost:30105
+		'''
             }
         }
         stage('Test Performance Jmeter') {
