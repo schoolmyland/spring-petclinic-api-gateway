@@ -96,7 +96,7 @@ pipeline {
                     mkdir .kube
                     ls
                     cat $KUBECONFIG > .kube/config
-                    helm install qa-${params.CLIENT_NAME} petclinic-dev --values=./petclinic-dev/value.yaml --set $JMETER_TAG.repo=localhost:5000 --set petclinic.bdpwd=$BDD_PASS --set namespace=qa-${params.CLIENT_NAME}   --set $JMETER_TAG.docker_tag=qa-${params.CLIENT_NAME} --set $JMETER_TAG.nodePort=${params.NODE_PORT}                                            
+                    helm install qa-${params.CLIENT_NAME} petclinic-dev --values=./petclinic-dev/value.yaml --set gatw.repo=localhost:5000 --set petclinic.bdpwd=$BDD_PASS --set namespace=qa-${params.CLIENT_NAME}   --set gatw.docker_tag=qa-${params.CLIENT_NAME} --set gatw.nodePort=${params.NODE_PORT}                                            
                     sleep 120
                     """
                 }
