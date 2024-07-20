@@ -6,6 +6,8 @@ pipeline {
         string(name: 'CLIENT_NAME', defaultValue: '', description: 'Name of the client')
         string(name: 'HEX_CODE', defaultValue: '', description: 'Hex code for the main color')
         string(name: 'NODE_PORT', defaultValue: '', description: 'NodePort for the env')
+        string(name: 'DISPLAY_NAME', defaultValue: '', description: 'Display name for the build')
+        string(name: 'DESCRIPTION', defaultValue: '', description: 'Description for the build')
     }
     environment {
         DOCKER_ID = "poissonchat13"
@@ -14,6 +16,14 @@ pipeline {
         
     }
     stages {
+        stage('Parametrage') {
+            steps {
+                script {
+                    currentBuild.displayName = params.DISPLAY_NAME
+                    currentBuild.description = params.DESCRIPTION
+                }
+            }
+        }
 	stage('Recup css and transform') {
             steps {
                 script {
