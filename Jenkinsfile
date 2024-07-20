@@ -135,8 +135,8 @@ pipeline {
 			    string(name: 'DOCKER_TAG', value: DOCKER_TAG)
                         ], wait: false
 
-			def jobUrl = buildResult.getAbsoluteUrl()
-                        echo "Job URL: ${jobUrl}"                    
+			def jobUrl = "${JENKINS_URL}/job/api-gateway-client/${buildInfo.getNumber()}/"
+                        echo "Job URL: ${jobUrl}"
                         sh """
                         curl -X POST -u ${API_TOKEN} -F 'json={"displayName":"${displayName}","description":"${description}"}' \
                         '${jobUrl}configSubmit'
