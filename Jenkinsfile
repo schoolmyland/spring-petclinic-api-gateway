@@ -59,7 +59,7 @@ pipeline {
                 '''
             }
         }
-        stage('Build Jmeter pour report') {
+        stage('Build Jmeter pour rapport') {
             environment {
                 API_TOKEN = credentials("API_TOKEN")
             }
@@ -97,7 +97,7 @@ pipeline {
                 '''
             }
         }
-        stage('Push Image standard prod') {
+        stage('Push Image standard de prod') {
             environment {
                 DOCKER_PASS = credentials("DOCKER_HUB_PASS")
             }
@@ -112,7 +112,7 @@ pipeline {
             }
         }
         stage('Lancement des Personnalisations par clients') {
-		    environment {
+	    environment {
                 API_TOKEN = credentials("API_TOKEN")
             }
             steps {
@@ -132,10 +132,10 @@ pipeline {
                             string(name: 'CLIENT_NAME', value: clientName),
                             string(name: 'HEX_CODE', value: hexCode),
                             string(name: 'NODE_PORT', value: nodePort),
-							string(name: 'DOCKER_TAG', value: DOCKER_TAG)
-                        ]
+			    string(name: 'DOCKER_TAG', value: DOCKER_TAG)
+                        ], wait: false
 
-						def jobUrl = buildResult.getAbsoluteUrl()
+			def jobUrl = buildResult.getAbsoluteUrl()
                         echo "Job URL: ${jobUrl}"                    
                         sh """
                         curl -X POST -u ${API_TOKEN} -F 'json={"displayName":"${displayName}","description":"${description}"}' \
