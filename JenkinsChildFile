@@ -14,49 +14,7 @@ pipeline {
         
     }
     stages {
-        stage('Check double job for the same client') {
-            steps {
-                script {
-                    def maxRetries = 12 
-                    def delaySeconds = 300 
-                    def currentClientName = env.JOB_NAME.split('-')[0]
-                    def currentBuildStartTime = currentBuild.startTimeInMillis
-
-                    def getRunningPipelines = {
-                        def runningPipelines = jenkins.model.Jenkins.instance.getAllItems(hudson.model.Job).findAll {
-                            it.isBuilding() && it.name != env.JOB_NAME && it.name.startsWith(currentClientName + "-")
-                        }
-                        return runningPipelines
-                    }
-
-                    def retryCount = 0
-                    def runningPipelines = getRunningPipelines()
-
-                    def filteredPipelines = runningPipelines.findAll { job ->
-                        job.getBuilds().find { build -> 
-                            build.isBuilding() && build.getStartTimeInMillis() < currentBuildStartTime 
-                        } != null
-                    }
-
-                    while (filteredPipelines.size() > 0 && retryCount < maxRetries) {
-                        echo "Other pipelines for client '${currentClientName}' are running for less time than the current job: ${filteredPipelines*.name}. Waiting for 5 minutes before checking again..."
-                        sleep delaySeconds
-                        retryCount++
-                        runningPipelines = getRunningPipelines()
-                        filteredPipelines = runningPipelines.findAll { job ->
-                            job.getBuilds().find { build -> 
-                                build.isBuilding() && build.getStartTimeInMillis() < currentBuildStartTime 
-                            } != null
-                        }
-                    }
-
-                    if (retryCount >= maxRetries) {
-                        error "Other pipelines for client '${currentClientName}' are still running after 1 hour of retries: ${filteredPipelines*.name}."
-                    }
-                }
-            }
-        }
-		stage('Recup css and transform') {
+	stage('Recup css and transform') {
             steps {
                 script {
                     sh '''
@@ -91,6 +49,7 @@ pipeline {
             steps {
                 script {
                     sh  """
+                    $JENK_TOOLBOX/ctrl/checkNamespaceUse.sh qa-${params.CLIENT_NAME}
                     cp -r ${JENK_TOOLBOX}/helm/* ./
                     rm -Rf .kube
                     mkdir .kube
