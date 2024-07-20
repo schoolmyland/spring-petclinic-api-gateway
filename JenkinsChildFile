@@ -65,7 +65,7 @@ pipeline {
             steps {
                 script {
                     sh '''
-		    $JENK_TOOLBOX/ctrl/checkpod.sh
+		    $JENK_TOOLBOX/ctrl/checkpod.sh qa-${params.CLIENT_NAME}
 		    curl localhost:${params.NODE_PORT}
 		    '''
                 }
