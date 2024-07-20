@@ -2,166 +2,146 @@ pipeline {
     environment {
         DOCKER_ID = "poissonchat13"
         DOCKER_IMAGE = "spring-petclinic-api-gateway"
-        DOCKER_TAG = "1.v.${BUILD_ID}"
-        CLIENT_LIST = "rouge,bleu,violet"
-
+		JMETER_TAG = "gatw"
+        JENK_TOOLBOX = "/opt/jenkins"
+		CSV_FILE = "${JENK_TOOLBOX}/custom/client-list.csv"
     }
     agent any
 
     stages {
-        stage('Maven build test') {
+        stage('Recuperation de la version Majeur') {
             steps {
                 script {
-                    sh '''
-                    ./mvnw clean package
-                    sleep 15
-                    '''
+                    VERSION_MAJEUR = sh(script: 'head -n 5 ./README.md | tail -n 1', returnStdout: true).trim()
+                    env.DOCKER_TAG = "${VERSION_MAJEUR}.${BUILD_ID}"
                 }
             }
         }
         stage('Docker Build Dev') {
-            environment {
-                DOCKER_PASS = credentials("DOCKER_HUB_PASS")
-            }
             steps {
-                script {
-                    sh '''
-                    docker build -t $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG-dev .
-                    sleep 10
-                    docker login -u $DOCKER_ID -p $DOCKER_PASS
-                    docker tag $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG-dev $DOCKER_ID/$DOCKER_IMAGE:latest-dev
-                    docker push $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG-dev
-                    docker push $DOCKER_ID/$DOCKER_IMAGE:latest-dev
-                    '''
-                }
+                sh '''
+                docker build -t localhost:5000/$DOCKER_IMAGE:latest .
+                docker push localhost:5000/$DOCKER_IMAGE:latest 
+                '''
             }
         }
         stage('Deploiement Developpement') {
             environment {
-                KUBECONFIG = credentials("config") // we retrieve  kubeconfig from secret file called config saved on jenkins
+                KUBECONFIG = credentials("confkub")
+                BDD_PASS = credentials("bdd_pass_dev")
             }
             steps {
-                script {
-                    sh '''
-                    cp -r /opt/helm/* ./
-                    rm -Rf .kube
-                    mkdir .kube
-                    ls
-                    cat $KUBECONFIG > .kube/config
-                    helm upgrade --install app spring-pet-clinic-litecloud --values=./spring-pet-clinic-litecloud/value.yaml
-                    sleep 120 
-                    '''
-                }
+                sh '''
+				$JENK_TOOLBOX/ctrl/checkNamespaceUse.sh
+                cp -r ${JENK_TOOLBOX}/helm/* ./
+                rm -Rf .kube
+                mkdir .kube
+                ls
+                cat $KUBECONFIG > .kube/config
+                helm install petclinic-dev petclinic-dev --values=./petclinic-dev/value.yaml --set $JMETER_TAG.repo=localhost:5000 --set petclinic.bdpwd=$BDD_PASS
+                sleep 120 
+                '''
             }
         }
         stage('Test Acceptance') {
+            steps {  
+                sh '''
+				$JENK_TOOLBOX/ctrl/checkpod.sh
+				curl localhost:30105
+				'''
+            }
+        }
+        stage('Test Performance Jmeter') {
+            steps {
+                sh '''
+                echo "$DOCKER_IMAGE:$DOCKER_TAG $(date +"%Y-%m-%d-%H-%M")" >> $JENK_TOOLBOX/logs/jmeter-commit-version.log
+                $JENK_TOOLBOX/apache-jmeter/bin/jmeter -n -t $JENK_TOOLBOX/test/petclinic_test_plan.jmx -l $JENK_TOOLBOX/test/petclinic_result_test.jtl
+                '''
+            }
+        }
+        stage('Build Jmeter pour report') {
+            environment {
+                API_TOKEN = credentials("API_TOKEN")
+            }
             steps {
                 script {
-                    sh '''
-                    curl localhost:30105
-                    '''
+                    def displayName = "${JMETER_TAG}-${DOCKER_TAG}"
+                    def description = "Build trigger by the job ${JOB_NAME}  On the microservice ${DOCKER_IMAGE} "
+
+                    def buildResult = build job: 'jmeter-perf-central', 
+                                           wait: true, 
+                                           propagate: false
+
+                    def jobUrl = buildResult.getAbsoluteUrl()
+
+                    echo "Job URL: ${jobUrl}"
+                    
+                    sh """
+                    curl -X POST -u ${API_TOKEN} -F 'json={"displayName":"${displayName}","description":"${description}"}' \
+                    '${jobUrl}configSubmit'
+                    """
                 }
             }
         }
         stage('Demontage Env Dev') {
             environment {
-                KUBECONFIG = credentials("config") // we retrieve  kubeconfig f>
+                KUBECONFIG = credentials("confkub")
             }
             steps {
-                script {
-                    sh '''
-                    rm -Rf .kube
-                    mkdir .kube
-                    ls
-                    cat $KUBECONFIG > .kube/config
-                    helm uninstall app 
-                    '''
-                }
+                sh '''
+                rm -Rf .kube
+                mkdir .kube
+                ls
+                cat $KUBECONFIG > .kube/config
+                helm uninstall petclinic-dev
+                '''
             }
         }
-        stage('Recup css and transform') {
-            steps {
-                script {
-                    sh '''
-                    cp ./src/main/less/header.less /opt/custom/rouge/
-                    cp ./src/main/less/petclinic.less /opt/custom/rouge/
-                    sed -i s/#6db33f/#fe2e2e/ /opt/custom/rouge/header.less
-                    sed -i s/#6db33f/#fe2e2e/ /opt/custom/rouge/petclinic.less
-                    cp ./src/main/less/header.less /opt/custom/bleu/
-                    cp ./src/main/less/petclinic.less /opt/custom/bleu/
-                    sed -i s/#6db33f/#2e2efe/ /opt/custom/bleu/header.less
-                    sed -i s/#6db33f/#2e2efe/ /opt/custom/bleu/petclinic.less
-                    cp ./src/main/less/header.less /opt/custom/violet/
-                    cp ./src/main/less/petclinic.less /opt/custom/violet/
-                    sed -i s/#6db33f/#ac58fa/ /opt/custom/violet/header.less
-                    sed -i s/#6db33f/#ac58fa/ /opt/custom/violet/petclinic.less
-                    '''
-                }
-            }
-        }
-        stage('Customisation build image') {
+        stage('Push Image standard prod') {
             environment {
                 DOCKER_PASS = credentials("DOCKER_HUB_PASS")
             }
             steps {
-                script {
-                    def clients = CLIENT_LIST.split(",")
-                    for (client in clients) {
-                        echo "Processing client: ${client}"
-                        sh """
-                        cp /opt/custom/${client}/img/* ./src/main/resources/static/images/
-                        cp /opt/custom/${client}/*.less ./src/main/less/
-                        ./mvnw clean package
-                        sleep 15
-                        docker build -t $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG-qa-${client} .
-                        sleep 10
-                        docker login -u $DOCKER_ID -p $DOCKER_PASS
-                        docker tag $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG-qa-${client} $DOCKER_ID/$DOCKER_IMAGE:latest-qa-${client}
-                        docker push $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG-qa-${client}
-                        docker push $DOCKER_ID/$DOCKER_IMAGE:latest-qa-${client}
-                        sleep 10
-                        """
-                    }
-                }
+                sh '''
+                docker login -u $DOCKER_ID -p $DOCKER_PASS
+                docker tag localhost:5000/$DOCKER_IMAGE:latest $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG
+                docker tag $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG $DOCKER_ID/$DOCKER_IMAGE:latest
+                docker push $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG
+                docker push $DOCKER_ID/$DOCKER_IMAGE:latest
+                '''
             }
         }
-        stage('Deploiement QA par client') {
-            environment {
-                KUBECONFIG = credentials("config") // we retrieve  kubeconfig f>
+        stage('Lancement des Personnalisations par clients') {
+		    environment {
+                API_TOKEN = credentials("API_TOKEN")
             }
             steps {
                 script {
-                    def clients = CLIENT_LIST.split(",")
-                    for (client in clients) {
-                        sh  """
-                        rm -Rf .kube
-                        mkdir .kube
-                        ls
-                        cat $KUBECONFIG > .kube/config
-                        helm upgrade --install app spring-pet-clinic-litecloud-dns --values=./spring-pet-clinic-litecloud-dns/${client}-value.yaml
-                        sleep 60 
-                        """
-                    }
-                }
-            }
-        }
-        stage('Test access client') {
-            steps {
-                script {
-                    sh '''
-                    curl https://rouge.pet-clinic-tpr.cloudns.ph
-                    curl https://bleu.pet-clinic-tpr.cloudns.ph
-                    curl https://violet.pet-clinic-tpr.cloudns.ph
-                    '''
-                }
-            }
-        }
-        stage('notification client') {
-            steps {
-                script {
-                    sh '''
+                    def csvFile = readFile(env.CSV_FILE)
+                    def csvLines = csvFile.split('\n')
+                    csvLines.each { line ->
+                        def params = line.split(';')
+                        def clientName = params[0].trim()
+                        def hexCode = params[1].trim()
+                        def nodePort = params[2].trim()
+                        def displayName = "${clientName}-${JMETER_TAG}-${DOCKER_TAG}"
+                        def description = "Build trigger by the job ${JOB_NAME}  On the microservice ${DOCKER_IMAGE}-${DOCKER_TAG} for the customer ${clientName}"
+						
+                        echo "Job custom client launch for : clientName=${clientName} Parameters hexCode=${hexCode}, nodePort=${nodePort}"
+                        build job: 'api-gateway-custom', parameters: [
+                            string(name: 'CLIENT_NAME', value: clientName),
+                            string(name: 'HEX_CODE', value: hexCode),
+                            string(name: 'NODE_PORT', value: nodePort),
+							string(name: 'DOCKER_TAG', value: DOCKER_TAG)
+                        ]
 
-                    '''
+						def jobUrl = buildResult.getAbsoluteUrl()
+                        echo "Job URL: ${jobUrl}"                    
+                        sh """
+                        curl -X POST -u ${API_TOKEN} -F 'json={"displayName":"${displayName}","description":"${description}"}' \
+                        '${jobUrl}configSubmit'
+                        """
+                    }
                 }
             }
         }
