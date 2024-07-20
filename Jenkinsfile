@@ -128,7 +128,7 @@ pipeline {
                         def description = "Build trigger by the job ${JOB_NAME}  On the microservice ${DOCKER_IMAGE}-${DOCKER_TAG} for the customer ${clientName}"
 						
                         echo "Job custom client launch for : clientName=${clientName} Parameters hexCode=${hexCode}, nodePort=${nodePort}"
-                        build job: 'api-gateway-custom', parameters: [
+                        build job: 'api-gateway-client', parameters: [
                             string(name: 'CLIENT_NAME', value: clientName),
                             string(name: 'HEX_CODE', value: hexCode),
                             string(name: 'NODE_PORT', value: nodePort),
