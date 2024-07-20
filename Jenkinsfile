@@ -115,7 +115,7 @@ pipeline {
     	environment {
         	API_TOKEN = credentials("API_TOKEN")
     	}
-    	steps {
+    	    steps {
         	script {
             		def csvFile = readFile(env.CSV_FILE)
             		def csvLines = csvFile.split('\n')
@@ -132,15 +132,9 @@ pipeline {
                     			string(name: 'HEX_CODE', value: hexCode),
                     			string(name: 'NODE_PORT', value: nodePort),
                     			string(name: 'DOCKER_TAG', value: DOCKER_TAG)
+					string(name: 'DISPLAY_NAME', value: displayName),
+                    			string(name: 'DESCRIPTION', value: description)
                 		], wait: false
-				
-                		def buildNumber = triggeredBuild.getNumber()
-                		def jobUrl = "${env.JENKINS_URL}/job/api-gateway-client/${buildNumber}/"
-                		echo "Job URL: ${jobUrl}"
-                		sh """
-                		curl -X POST -u ${API_TOKEN} -F 'json={"displayName":"${displayName}","description":"${description}"}' \
-                		'${jobUrl}configSubmit'
-                		"""
             		}
         	}
 	    }
