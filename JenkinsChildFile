@@ -1,0 +1,135 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'DOCKER_TAG', defaultValue: '', description: 'Docker tag versioning')
+        string(name: 'CLIENT_NAME', defaultValue: '', description: 'Name of the client')
+        string(name: 'HEX_CODE', defaultValue: '', description: 'Hex code for the main color')
+        string(name: 'NODE_PORT', defaultValue: '', description: 'NodePort for the env')
+    }
+    environment {
+        DOCKER_ID = "poissonchat13"
+        DOCKER_IMAGE = "spring-petclinic-api-gateway"
+        JENK_TOOLBOX = "/opt/jenkins"
+		DOCKER_TAG = params.DOCKER_TAG
+		CLIENT_NAME = params.CLIENT_NAME
+		HEX_CODE = params.HEX_CODE
+		NODE_PORT = params.NODE_PORT
+    }
+    stages {
+        stage('Check double job for the same client') {
+            steps {
+                script {
+                    def maxRetries = 12 
+                    def delaySeconds = 300 
+                    def currentClientName = env.JOB_NAME.split('-')[0]
+                    def currentBuildStartTime = currentBuild.startTimeInMillis
+
+                    def getRunningPipelines = {
+                        def runningPipelines = jenkins.model.Jenkins.instance.getAllItems(hudson.model.Job).findAll {
+                            it.isBuilding() && it.name != env.JOB_NAME && it.name.startsWith(currentClientName + "-")
+                        }
+                        return runningPipelines
+                    }
+
+                    def retryCount = 0
+                    def runningPipelines = getRunningPipelines()
+
+                    def filteredPipelines = runningPipelines.findAll { job ->
+                        job.getBuilds().find { build -> 
+                            build.isBuilding() && build.getStartTimeInMillis() < currentBuildStartTime 
+                        } != null
+                    }
+
+                    while (filteredPipelines.size() > 0 && retryCount < maxRetries) {
+                        echo "Other pipelines for client '${currentClientName}' are running for less time than the current job: ${filteredPipelines*.name}. Waiting for 5 minutes before checking again..."
+                        sleep delaySeconds
+                        retryCount++
+                        runningPipelines = getRunningPipelines()
+                        filteredPipelines = runningPipelines.findAll { job ->
+                            job.getBuilds().find { build -> 
+                                build.isBuilding() && build.getStartTimeInMillis() < currentBuildStartTime 
+                            } != null
+                        }
+                    }
+
+                    if (retryCount >= maxRetries) {
+                        error "Other pipelines for client '${currentClientName}' are still running after 1 hour of retries: ${filteredPipelines*.name}."
+                    }
+                }
+            }
+        }
+		stage('Recup css and transform') {
+            steps {
+                script {
+                    sh '''
+                    cp ./src/main/less/header.less $JENK_TOOLBOX/custom/$CLIENT_NAME/
+                    cp ./src/main/less/petclinic.less $JENK_TOOLBOX/custom/$CLIENT_NAME/
+                    sed -i s/#6db33f/$HEX_CODE/ $JENK_TOOLBOX/custom/$CLIENT_NAME/header.less
+                    sed -i s/#6db33f/$HEX_CODE/ $JENK_TOOLBOX/custom/$CLIENT_NAME/petclinic.less
+                    '''
+                }
+            }
+        }
+        stage('Customisation build image') {
+            environment {
+                DOCKER_PASS = credentials("DOCKER_HUB_PASS")
+            }
+            steps {
+                script {
+                    sh """
+                    cp $JENK_TOOLBOX/custom/$CLIENT_NAME/img/* ./src/main/resources/static/images/
+                    cp $JENK_TOOLBOX/custom/$CLIENT_NAME/*.less ./src/main/less/
+                    docker build -t localhost:5000/$DOCKER_IMAGE-$CLIENT_NAME:latest .
+                    docker push localhost:5000/$DOCKER_IMAGE-$CLIENT_NAME:latest
+                    sleep 10
+                    """
+                }
+            }
+        }
+        stage('Deploiement QA par client') {
+            environment {
+                KUBECONFIG = credentials("config") 
+            }
+            steps {
+                script {
+                    sh  """
+                    rm -Rf .kube
+                    mkdir .kube
+                    ls
+                    cat $KUBECONFIG > .kube/config
+                    helm upgrade --install app spring-pet-clinic-litecloud-dns --values=./spring-pet-clinic-litecloud-dns/$CLIENT_NAME-value.yaml
+                    sleep 120
+                    """
+                }
+            }
+        }
+        stage('Test access client') {
+            steps {
+                script {
+                    sh '''
+				    $JENK_TOOLBOX/ctrl/checkpod.sh
+				    curl localhost:$NODE_PORT
+				    '''
+                }
+            }
+        }
+		stage('Push of the final image') {
+            environment {
+                DOCKER_PASS = credentials("DOCKER_HUB_PASS")
+            }
+            steps {
+                script {
+                    sh """
+					docker login -u $DOCKER_ID -p $DOCKER_PASS
+                    docker tag localhost:5000/$DOCKER_IMAGE-$CLIENT_NAME:latest $DOCKER_ID/$DOCKER_IMAGE-$CLIENT_NAME:latest
+					docker tag $DOCKER_ID/$DOCKER_IMAGE-$CLIENT_NAME:latest $DOCKER_ID/$DOCKER_IMAGE-$CLIENT_NAME:$DOCKER_TAG
+                    docker push $DOCKER_ID/$DOCKER_IMAGE-$CLIENT_NAME:latest
+                    docker push $DOCKER_ID/$DOCKER_IMAGE-$CLIENT_NAME:$DOCKER_TAG
+                    sleep 10
+                    """
+                }
+            }
+        }
+    }
+}
