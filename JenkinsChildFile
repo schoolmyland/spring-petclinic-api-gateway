@@ -11,6 +11,7 @@ pipeline {
         DOCKER_ID = "poissonchat13"
         DOCKER_IMAGE = "spring-petclinic-api-gateway"
         JENK_TOOLBOX = "/opt/jenkins"
+        
     }
     stages {
         stage('Check double job for the same client') {
@@ -59,10 +60,10 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    cp ./src/main/less/header.less $JENK_TOOLBOX/custom/$CLIENT_NAME/
-                    cp ./src/main/less/petclinic.less $JENK_TOOLBOX/custom/$CLIENT_NAME/
-                    sed -i s/#6db33f/$HEX_CODE/ $JENK_TOOLBOX/custom/$CLIENT_NAME/header.less
-                    sed -i s/#6db33f/$HEX_CODE/ $JENK_TOOLBOX/custom/$CLIENT_NAME/petclinic.less
+                    cp ./src/main/less/header.less $JENK_TOOLBOX/custom/${params.CLIENT_NAME}/
+                    cp ./src/main/less/petclinic.less $JENK_TOOLBOX/custom/${params.CLIENT_NAME}/
+                    sed -i s/#6db33f/${params.HEX_CODE}/ $JENK_TOOLBOX/custom/${params.CLIENT_NAME}/header.less
+                    sed -i s/#6db33f/${params.HEX_CODE}/ $JENK_TOOLBOX/custom/${params.CLIENT_NAME}/petclinic.less
                     '''
                 }
             }
@@ -74,10 +75,10 @@ pipeline {
             steps {
                 script {
                     sh """
-                    cp $JENK_TOOLBOX/custom/$CLIENT_NAME/img/* ./src/main/resources/static/images/
-                    cp $JENK_TOOLBOX/custom/$CLIENT_NAME/*.less ./src/main/less/
-                    docker build -t localhost:5000/$DOCKER_IMAGE:qa-$CLIENT_NAME .
-                    docker push localhost:5000/$DOCKER_IMAGE:qa-$CLIENT_NAME
+                    cp $JENK_TOOLBOX/custom/${params.CLIENT_NAME}/img/* ./src/main/resources/static/images/
+                    cp $JENK_TOOLBOX/custom/${params.CLIENT_NAME}/*.less ./src/main/less/
+                    docker build -t localhost:5000/$DOCKER_IMAGE:qa-${params.CLIENT_NAME} .
+                    docker push localhost:5000/$DOCKER_IMAGE:qa-${params.CLIENT_NAME}
                     sleep 10
                     """
                 }
@@ -95,7 +96,7 @@ pipeline {
                     mkdir .kube
                     ls
                     cat $KUBECONFIG > .kube/config
-                    helm install qa-$CLIENT_NAME petclinic-dev --values=./petclinic-dev/value.yaml --set $JMETER_TAG.repo=localhost:5000 --set petclinic.bdpwd=$BDD_PASS --set namespace=qa-$CLIENT_NAME   --set $JMETER_TAG.docker_tag=qa-$CLIENT_NAME --set $JMETER_TAG.nodePort=$NODE_PORT                                            
+                    helm install qa-${params.CLIENT_NAME} petclinic-dev --values=./petclinic-dev/value.yaml --set $JMETER_TAG.repo=localhost:5000 --set petclinic.bdpwd=$BDD_PASS --set namespace=qa-${params.CLIENT_NAME}   --set $JMETER_TAG.docker_tag=qa-${params.CLIENT_NAME} --set $JMETER_TAG.nodePort=${params.NODE_PORT}                                            
                     sleep 120
                     """
                 }
@@ -106,7 +107,7 @@ pipeline {
                 script {
                     sh '''
 		    $JENK_TOOLBOX/ctrl/checkpod.sh
-		    curl localhost:$NODE_PORT
+		    curl localhost:${params.NODE_PORT}
 		    '''
                 }
             }
@@ -119,10 +120,10 @@ pipeline {
                 script {
                     sh """
 		    docker login -u $DOCKER_ID -p $DOCKER_PASS
-                    docker tag localhost:5000/$DOCKER_IMAGE:qa-$CLIENT_NAME $DOCKER_ID/$DOCKER_IMAGE-$CLIENT_NAME:latest
-		    docker tag $DOCKER_ID/$DOCKER_IMAGE-$CLIENT_NAME:latest $DOCKER_ID/$DOCKER_IMAGE-$CLIENT_NAME:$DOCKER_TAG
-                    docker push $DOCKER_ID/$DOCKER_IMAGE-$CLIENT_NAME:latest
-                    docker push $DOCKER_ID/$DOCKER_IMAGE-$CLIENT_NAME:$DOCKER_TAG
+                    docker tag localhost:5000/$DOCKER_IMAGE:qa-${params.CLIENT_NAME} $DOCKER_ID/$DOCKER_IMAGE-${params.CLIENT_NAME}:latest
+		    docker tag $DOCKER_ID/$DOCKER_IMAGE-${params.CLIENT_NAME}:latest $DOCKER_ID/$DOCKER_IMAGE-${params.CLIENT_NAME}:${params.DOCKER_TAG}
+                    docker push $DOCKER_ID/$DOCKER_IMAGE-${params.CLIENT_NAME}:latest
+                    docker push $DOCKER_ID/$DOCKER_IMAGE-${params.CLIENT_NAME}:${params.DOCKER_TAG}
                     sleep 10
                     """
                 }
