@@ -52,7 +52,7 @@ pipeline {
                 }
             }
         }
-        stage(''Deploiement QA par client') {
+        stage('Deploiement QA par client') {
             environment {
                 KUBECONFIG = credentials("confkub")
                 BDD_PASS = credentials("bdd_pass_dev")
