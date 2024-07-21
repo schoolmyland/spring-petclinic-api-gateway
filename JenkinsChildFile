@@ -80,6 +80,20 @@ pipeline {
                 }
             }
         }
+        stage('Demontage Env client') {
+            environment {
+                KUBECONFIG = credentials("confkub")
+            }
+            steps {
+                sh """
+                rm -Rf .kube
+                mkdir .kube
+                ls
+                cat ${KUBECONFIG} > .kube/config
+                helm uninstall qa-${params.CLIENT_NAME}
+                """
+            }
+        }
 	stage('Push of the final image') {
             environment {
                 DOCKER_PASS = credentials("DOCKER_HUB_PASS")
