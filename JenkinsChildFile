@@ -25,17 +25,17 @@ pipeline {
             }
         }
 	stage('Recup css and transform') {
-            steps {
-                script {
-                    sh '''
-                    cp ./src/main/less/header.less $JENK_TOOLBOX/custom/${params.CLIENT_NAME}/
-                    cp ./src/main/less/petclinic.less $JENK_TOOLBOX/custom/${params.CLIENT_NAME}/
-                    sed -i s/#6db33f/${params.HEX_CODE}/ $JENK_TOOLBOX/custom/${params.CLIENT_NAME}/header.less
-                    sed -i s/#6db33f/${params.HEX_CODE}/ $JENK_TOOLBOX/custom/${params.CLIENT_NAME}/petclinic.less
-                    '''
+    	    steps {
+        	script {
+                    sh """
+            	    cp ./src/main/less/header.less \$JENK_TOOLBOX/custom/${params.CLIENT_NAME}/
+                    cp ./src/main/less/petclinic.less \$JENK_TOOLBOX/custom/${params.CLIENT_NAME}/
+                    sed -i 's/#6db33f/${params.HEX_CODE}/g' \$JENK_TOOLBOX/custom/${params.CLIENT_NAME}/header.less
+                    sed -i 's/#6db33f/${params.HEX_CODE}/g' \$JENK_TOOLBOX/custom/${params.CLIENT_NAME}/petclinic.less
+            	    """
                 }
-            }
-        }
+    	    }
+	}
         stage('Customisation build image') {
             environment {
                 DOCKER_PASS = credentials("DOCKER_HUB_PASS")
