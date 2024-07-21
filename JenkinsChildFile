@@ -52,23 +52,22 @@ pipeline {
                 }
             }
         }
-        stage('Deploiement QA par client') {
+        stage(''Deploiement QA par client') {
             environment {
-                KUBECONFIG = credentials("confkube") 
+                KUBECONFIG = credentials("confkub")
+                BDD_PASS = credentials("bdd_pass_dev")
             }
             steps {
-                script {
-                    sh  """
-                    $JENK_TOOLBOX/ctrl/checkNamespaceUse.sh qa-${params.CLIENT_NAME}
-                    cp -r ${JENK_TOOLBOX}/helm/* ./
-                    rm -Rf .kube
-                    mkdir .kube
-                    ls
-                    cat $KUBECONFIG > .kube/config
-                    helm install qa-${params.CLIENT_NAME} petclinic-dev --values=./petclinic-dev/value.yaml --set gatw.repo=localhost:5000 --set petclinic.bdpwd=$BDD_PASS --set namespace=qa-${params.CLIENT_NAME}   --set gatw.docker_tag=qa-${params.CLIENT_NAME} --set gatw.nodePort=${params.NODE_PORT}                                            
-                    sleep 120
-                    """
-                }
+                sh '''
+		$JENK_TOOLBOX/ctrl/checkNamespaceUse.sh developpement qa-${params.CLIENT_NAME}
+                cp -r ${JENK_TOOLBOX}/helm/* ./
+                rm -Rf .kube
+                mkdir .kube
+                ls
+                cat $KUBECONFIG > .kube/config
+                helm install qa-${params.CLIENT_NAME} petclinic-dev --values=./petclinic-dev/value.yaml --set gatw.repo=localhost:5000 --set petclinic.bdpwd=$BDD_PASS --set namespace=qa-${params.CLIENT_NAME}   --set gatw.docker_tag=qa-${params.CLIENT_NAME} --set gatw.nodePort=${params.NODE_PORT}
+                sleep 120 
+                '''
             }
         }
         stage('Test access client') {
