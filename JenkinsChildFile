@@ -54,7 +54,7 @@ pipeline {
         }
         stage('Deploiement QA par client') {
             environment {
-                KUBECONFIG = credentials("config") 
+                KUBECONFIG = credentials("confkube") 
             }
             steps {
                 script {
