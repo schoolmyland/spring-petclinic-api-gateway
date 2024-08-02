@@ -59,7 +59,7 @@ pipeline {
             }
             steps {
                 sh """
-                ${JENK_TOOLBOX}/ctrl/checkNamespaceUse.sh developpement qa-${params.CLIENT_NAME}
+                ${JENK_TOOLBOX}/ctrl/checkNamespaceUse.sh qa-${params.CLIENT_NAME}
                 cp -r ${JENK_TOOLBOX}/helm/* ./
                 rm -Rf .kube
                 mkdir .kube
