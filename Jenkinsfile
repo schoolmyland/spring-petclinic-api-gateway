@@ -1,19 +1,19 @@
 pipeline {
-    environment {
-        DOCKER_ID = "poissonchat13"
-        DOCKER_IMAGE = "spring-petclinic-api-gateway"
-	JMETER_TAG = "gatw"
-        JENK_TOOLBOX = "/opt/jenkins"
-	CSV_FILE = "${JENK_TOOLBOX}/custom/client-list.csv"
-    }
     agent any
-
     stages {
-        stage('Recuperation de la version Majeur') {
+        stage('Mise en place des variables') {
             steps {
                 script {
                     VERSION_MAJEUR = sh(script: 'head -n 5 ./README.md | tail -n 1', returnStdout: true).trim()
                     env.DOCKER_TAG = "${VERSION_MAJEUR}.${BUILD_ID}"
+                    def jobDirName = env.JOB_NAME
+                    def splitDir = jobDirName.split('/') 
+                    def jobName = splitDir[1]
+                    def splitParts = jobName.split('_')
+                    def prefix = "spring-petclinic-"
+                    env.JMETER_TAG = splitParts[0]
+                    env.DOCKER_IMAGE = splitParts[1]
+                    env.SERVICE_NAME =  env.DOCKER_IMAGE.replaceFirst(prefix, '')
                 }
             }
         }
@@ -32,7 +32,7 @@ pipeline {
             }
             steps {
                 sh '''
-		$JENK_TOOLBOX/ctrl/checkNamespaceUse.sh developpement
+                $JENK_TOOLBOX/ctrl/checkNamespaceUse.sh developpement
                 cp -r ${JENK_TOOLBOX}/helm/* ./
                 rm -Rf .kube
                 mkdir .kube
@@ -44,11 +44,15 @@ pipeline {
             }
         }
         stage('Test Acceptance') {
-            steps {  
-                sh '''
-		$JENK_TOOLBOX/ctrl/checkpod.sh developpement
-		curl localhost:30105
-		'''
+            steps {
+                script {
+                sh '$JENK_TOOLBOX/ctrl/checkpod.sh developpement'
+                }
+            }
+            post {
+                failure {
+                    sh 'helm uninstall petclinic-dev'
+                }
             }
         }
         stage('Test Performance Jmeter') {
@@ -59,7 +63,7 @@ pipeline {
                 '''
             }
         }
-        stage('Build Jmeter pour rapport') {
+        stage('Build Jmeter pour report') {
             environment {
                 API_TOKEN = credentials("API_TOKEN")
             }
@@ -83,6 +87,21 @@ pipeline {
                 }
             }
         }
+        stage('Push Image pour prod') {
+            environment {
+                DOCKER_ID = credentials("DOCKER_HUB_ID")
+                DOCKER_PASS = credentials("DOCKER_HUB_PASS")
+            }
+            steps {
+                sh '''
+                docker login -u $DOCKER_ID -p $DOCKER_PASS
+                docker tag localhost:5000/$DOCKER_IMAGE:latest $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG
+                docker tag $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG $DOCKER_ID/$DOCKER_IMAGE:latest
+                docker push $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG
+                docker push $DOCKER_ID/$DOCKER_IMAGE:latest
+                '''
+            }
+        }
         stage('Demontage Env Dev') {
             environment {
                 KUBECONFIG = credentials("confkub")
@@ -97,47 +116,22 @@ pipeline {
                 '''
             }
         }
-        stage('Push Image standard de prod') {
+        stage('Mise en Production') {
             environment {
-                DOCKER_PASS = credentials("DOCKER_HUB_PASS")
+                CLUSTERNAME = credentials("cluster")
             }
             steps {
-                sh '''
-                docker login -u $DOCKER_ID -p $DOCKER_PASS
-                docker tag localhost:5000/$DOCKER_IMAGE:latest $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG
-                docker tag $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG $DOCKER_ID/$DOCKER_IMAGE:latest
-                docker push $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG
-                docker push $DOCKER_ID/$DOCKER_IMAGE:latest
-                '''
+                withCredentials([[
+                $class: 'AmazonWebServicesCredentialsBinding',
+                  credentialsId: "kube-admin",
+                  accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                  secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]]) {
+                  sh '''
+                  $JENK_TOOLBOX/ctrl/updatePod.sh $CLUSTERNAME $SERVICE_NAME
+                  '''
+                }
             }
-        }
-	stage('Lancement des Personnalisations par clients') {
-    	environment {
-        	API_TOKEN = credentials("API_TOKEN")
-    	}
-    	    steps {
-        	script {
-            		def csvFile = readFile(env.CSV_FILE)
-            		def csvLines = csvFile.split('\n')
-            		csvLines.each { line ->
-                		def params = line.split(';')
-                		def clientName = params[0].trim()
-                		def hexCode = params[1].trim()
-                		def nodePort = params[2].trim()
-                		def displayName = "${clientName}-${JMETER_TAG}-${DOCKER_TAG}"
-                		def description = "Build trigger by the job ${JOB_NAME}  On the microservice ${DOCKER_IMAGE}-${DOCKER_TAG} for the customer ${clientName}"
-                		echo "Job custom client launch for : clientName=${clientName} Parameters hexCode=${hexCode}, nodePort=${nodePort}"
-                		def triggeredBuild = build job: 'api-gateway-client', parameters: [
-                    			string(name: 'CLIENT_NAME', value: clientName),
-                    			string(name: 'HEX_CODE', value: hexCode),
-                    			string(name: 'NODE_PORT', value: nodePort),
-                    			string(name: 'DOCKER_TAG', value: DOCKER_TAG),
-					string(name: 'DISPLAY_NAME', value: displayName),
-                    			string(name: 'DESCRIPTION', value: description)
-                		], wait: false
-            		}
-        	}
-	    }
         }
     }
 }
