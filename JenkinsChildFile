@@ -68,13 +68,24 @@ pipeline {
                 """
             }
         }
-        stage('Test access client') {
+        stage('Test des pods') {
             steps {
                 script {
-                    sh """
-		    ${JENK_TOOLBOX}/ctrl/checkpod.sh qa-${params.CLIENT_NAME}
+		    sh """	
+                    $JENK_TOOLBOX/ctrl/checkpod.sh developpement
 		    curl localhost:${params.NODE_PORT}
 		    """
+                }
+            }
+            post {
+                failure {
+                    sh '''
+                    rm -Rf .kube
+                    mkdir .kube
+                    ls
+                    cat $KUBECONFIG > .kube/config
+                    helm uninstall petclinic-dev
+                    '''
                 }
             }
         }
