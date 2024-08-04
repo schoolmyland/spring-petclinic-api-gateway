@@ -46,7 +46,10 @@ pipeline {
         stage('Test des pods') {
             steps {
                 script {
-                sh '$JENK_TOOLBOX/ctrl/checkpod.sh developpement'
+		    sh """	
+                    $JENK_TOOLBOX/ctrl/checkpod.sh developpement
+		    curl localhost:${params.NODE_PORT}
+		    """
                 }
             }
             post {
