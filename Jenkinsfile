@@ -116,22 +116,33 @@ pipeline {
                 '''
             }
         }
-        stage('Mise en Production') {
-            environment {
-                CLUSTERNAME = credentials("cluster")
-            }
-            steps {
-                withCredentials([[
-                $class: 'AmazonWebServicesCredentialsBinding',
-                  credentialsId: "kube-admin",
-                  accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                  secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-                ]]) {
-                  sh '''
-                  $JENK_TOOLBOX/ctrl/updatePod.sh $CLUSTERNAME $SERVICE_NAME
-                  '''
-                }
-            }
+	stage('Lancement des Personnalisations par clients') {
+    	environment {
+        	API_TOKEN = credentials("API_TOKEN")
+    	}
+    	    steps {
+        	    script {
+            		def csvFile = readFile(env.CSV_FILE)
+            		def csvLines = csvFile.split('\n')
+            		csvLines.each { line ->
+                		def params = line.split(';')
+                		def clientName = params[0].trim()
+                		def hexCode = params[1].trim()
+                		def nodePort = params[2].trim()
+                		def displayName = "${clientName}-${JMETER_TAG}-${DOCKER_TAG}"
+                		def description = "Build trigger by the job ${JOB_NAME}  On the microservice ${DOCKER_IMAGE}-${DOCKER_TAG} for the customer ${clientName}"
+                		echo "Job custom client launch for : clientName=${clientName} Parameters hexCode=${hexCode}, nodePort=${nodePort}"
+                		def triggeredBuild = build job: 'api-gateway-client', parameters: [
+                    			string(name: 'CLIENT_NAME', value: clientName),
+                    			string(name: 'HEX_CODE', value: hexCode),
+                    			string(name: 'NODE_PORT', value: nodePort),
+                    			string(name: 'DOCKER_TAG', value: DOCKER_TAG),
+					string(name: 'DISPLAY_NAME', value: displayName),
+                    			string(name: 'DESCRIPTION', value: description)
+                		], wait: false
+            		}
+		        }
+	        }
         }
     }
 }
