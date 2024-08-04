@@ -120,8 +120,8 @@ pipeline {
     	environment {
         	API_TOKEN = credentials("API_TOKEN")
     	}
-    	    steps {
-        	    script {
+    	steps {
+        	script {
             		def csvFile = readFile(env.CSV_FILE)
             		def csvLines = csvFile.split('\n')
             		csvLines.each { line ->
@@ -140,9 +140,9 @@ pipeline {
 					string(name: 'DISPLAY_NAME', value: displayName),
                     			string(name: 'DESCRIPTION', value: description)
                 		], wait: false
-            		}
-		        }
-	        }
+            	    }
+		}
+	    }
         }
     }
 }
