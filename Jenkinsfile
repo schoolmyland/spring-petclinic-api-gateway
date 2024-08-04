@@ -43,7 +43,7 @@ pipeline {
                 '''
             }
         }
-        stage('Test Acceptance') {
+        stage('Test des pods') {
             steps {
                 script {
                 sh '$JENK_TOOLBOX/ctrl/checkpod.sh developpement'
