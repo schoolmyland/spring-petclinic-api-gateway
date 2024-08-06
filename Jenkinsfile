@@ -14,6 +14,7 @@ pipeline {
                     env.JMETER_TAG = splitParts[0]
                     env.DOCKER_IMAGE = splitParts[1]
                     env.SERVICE_NAME =  env.DOCKER_IMAGE.replaceFirst(prefix, '')
+		    env.CSV_FILE = "${JENK_TOOLBOX}/custom/client-list.csv"
                 }
             }
         }
