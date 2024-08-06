@@ -105,6 +105,7 @@ pipeline {
         }
 	stage('Push of the final image') {
             environment {
+                DOCKER_ID = credentials("DOCKER_HUB_ID")
                 DOCKER_PASS = credentials("DOCKER_HUB_PASS")
             }
             steps {
