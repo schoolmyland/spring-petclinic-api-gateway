@@ -133,7 +133,7 @@ pipeline {
                   secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                 ]]) {
                   sh '''
-                  $JENK_TOOLBOX/ctrl/updatePod-gateway.sh $CLUSTERNAME petclinic-${params.CLIENT_NAME}
+                  ${JENK_TOOLBOX}/ctrl/updatePod-gateway.sh ${CLUSTERNAME} petclinic-${params.CLIENT_NAME}
                   '''
                 }
             }
