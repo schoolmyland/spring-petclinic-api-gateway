@@ -59,7 +59,7 @@ pipeline {
                     mkdir .kube
                     ls
                     cat $KUBECONFIG > .kube/config
-                    helm uninstall petclinic-dev --kubeconfig .kube/config
+                    helm uninstall petclinic-dev 
                     '''
                 }
             }
@@ -121,7 +121,7 @@ pipeline {
                 mkdir .kube
                 ls
                 cat $KUBECONFIG > .kube/config
-                helm uninstall petclinic-dev --kubeconfig .kube/config
+                helm uninstall petclinic-dev 
                 '''
             }
         }
