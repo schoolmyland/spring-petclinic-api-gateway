@@ -48,7 +48,7 @@ pipeline {
                 script {
 		    sh """	
                     $JENK_TOOLBOX/ctrl/checkpod.sh developpement
-		    curl localhost:${params.NODE_PORT}
+		    curl localhost:30105
 		    """
                 }
             }
