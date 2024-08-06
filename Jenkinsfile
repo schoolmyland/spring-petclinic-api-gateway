@@ -126,9 +126,6 @@ pipeline {
             }
         }
 	stage('Lancement des Personnalisations par clients') {
-    	environment {
-        	API_TOKEN = credentials("API_TOKEN")
-    	}
     	steps {
         	script {
             		def csvFile = readFile(env.CSV_FILE)
